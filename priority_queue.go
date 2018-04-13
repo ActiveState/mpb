@@ -1,52 +1,80 @@
 package mpb
 
-import "container/heap"
+import (
+	"container/heap"
+	"sync"
+)
 
 // A priorityQueue implements heap.Interface and holds Items.
-type priorityQueue []*Bar
-
-func (pq priorityQueue) Len() int { return len(pq) }
-
-func (pq priorityQueue) Less(i, j int) bool {
-	return pq[i].priority < pq[j].priority
+type priorityQueue struct {
+	items []*Bar
+	lock  sync.Mutex
 }
 
-func (pq priorityQueue) Swap(i, j int) {
-	pq[i], pq[j] = pq[j], pq[i]
-	pq[i].index = i
-	pq[j].index = j
+func newPQ() *priorityQueue {
+	return &priorityQueue{items: make([]*Bar, 0)}
+}
+
+func (pq *priorityQueue) Len() int {
+	pq.lock.Lock()
+	defer pq.lock.Unlock()
+	return len(pq.items)
+}
+
+func (pq *priorityQueue) Less(i, j int) bool {
+	pq.lock.Lock()
+	defer pq.lock.Unlock()
+	return pq.items[i].priority < pq.items[j].priority
+}
+
+func (pq *priorityQueue) Swap(i, j int) {
+	pq.lock.Lock()
+	defer pq.lock.Unlock()
+	pq.items[i], pq.items[j] = pq.items[j], pq.items[i]
+	pq.items[i].index = i
+	pq.items[j].index = j
 }
 
 func (pq *priorityQueue) Push(x interface{}) {
-	n := len(*pq)
+	pq.lock.Lock()
+	defer pq.lock.Unlock()
+	n := len(pq.items)
 	bar := x.(*Bar)
 	bar.index = n
-	*pq = append(*pq, bar)
+	pq.items = append(pq.items, bar)
 }
 
 func (pq *priorityQueue) Pop() interface{} {
-	old := *pq
+	pq.lock.Lock()
+	defer pq.lock.Unlock()
+	old := pq.items
 	n := len(old)
 	bar := old[n-1]
 	bar.index = -1 // for safety
-	*pq = old[0 : n-1]
+	pq.items = old[0 : n-1]
 	return bar
 }
 
 // update modifies the priority of an Bar in the queue.
 func (pq *priorityQueue) update(bar *Bar, priority int) {
+	pq.lock.Lock()
+	defer pq.lock.Unlock()
 	bar.priority = priority
 	heap.Fix(pq, bar.index)
 }
 
-func (pq priorityQueue) maxNumP() int {
+func (pq *priorityQueue) maxNumP() int {
 	if pq.Len() == 0 {
 		return 0
 	}
 
-	max := pq[0].NumOfPrependers()
+	pq.lock.Lock()
+	max := pq.items[0].NumOfPrependers()
+	pq.lock.Unlock()
 	for i := 1; i < pq.Len(); i++ {
-		n := pq[i].NumOfPrependers()
+		pq.lock.Lock()
+		n := pq.items[i].NumOfPrependers()
+		pq.lock.Unlock()
 		if n > max {
 			max = n
 		}
@@ -54,14 +82,18 @@ func (pq priorityQueue) maxNumP() int {
 	return max
 }
 
-func (pq priorityQueue) maxNumA() int {
+func (pq *priorityQueue) maxNumA() int {
 	if pq.Len() == 0 {
 		return 0
 	}
 
-	max := pq[0].NumOfAppenders()
+	pq.lock.Lock()
+	max := pq.items[0].NumOfAppenders()
+	pq.lock.Unlock()
 	for i := 1; i < pq.Len(); i++ {
-		n := pq[i].NumOfAppenders()
+		pq.lock.Lock()
+		n := pq.items[i].NumOfAppenders()
+		pq.lock.Unlock()
 		if n > max {
 			max = n
 		}

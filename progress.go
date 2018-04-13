@@ -57,10 +57,10 @@ type (
 // New creates new Progress instance, which orchestrates bars rendering process.
 // Accepts mpb.ProgressOption funcs for customization.
 func New(options ...ProgressOption) *Progress {
-	pq := make(priorityQueue, 0)
-	heap.Init(&pq)
+	pq := newPQ()
+	heap.Init(pq)
 	s := &pState{
-		bHeap:  &pq,
+		bHeap:  pq,
 		width:  pwidth,
 		format: pformat,
 		cw:     cwriter.New(os.Stdout),

@@ -33,7 +33,7 @@ func (p *Progress) serve(s *pState) {
 			}
 			var completed int
 			for i := 0; i < s.bHeap.Len(); i++ {
-				b := (*s.bHeap)[i]
+				b := (*s.bHeap).items[i]
 				if b.completed {
 					completed++
 				}
