@@ -52,7 +52,7 @@ type FdWriter interface {
 
 func (w *Writer) clearLines() error {
 	f, ok := w.out.(FdWriter)
-	if ok && !isatty.IsTerminal(f.Fd()) {
+	if !ok || !isatty.IsTerminal(f.Fd()) {
 		_, err := io.WriteString(w.out, strings.Repeat(clearCursorAndLine, w.lineCount))
 		return err
 	}
