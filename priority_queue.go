@@ -5,15 +5,8 @@ import (
 	"sync"
 )
 
-// A priorityQueue implements heap.Interface and holds Items.
-type priorityQueue struct {
-	items []*Bar
-	lock  sync.Mutex
-}
-
-func newPQ() *priorityQueue {
-	return &priorityQueue{items: make([]*Bar, 0)}
-}
+// A priorityQueue implements heap.Interface
+type priorityQueue []*Bar
 
 func (pq *priorityQueue) Len() int {
 	pq.lock.Lock()
@@ -55,7 +48,7 @@ func (pq *priorityQueue) Pop() interface{} {
 	return bar
 }
 
-// update modifies the priority of an Bar in the queue.
+// update modifies the priority of a Bar in the queue.
 func (pq *priorityQueue) update(bar *Bar, priority int) {
 	pq.lock.Lock()
 	defer pq.lock.Unlock()
